@@ -20,6 +20,14 @@ const APIUtil = {
     url: `/users/search`,
     data: {query: queryVal},
     success: success});
+  },
+
+  createTweet(data) {
+    return $.ajax({
+      method: "POST",
+      dataType: "json",
+      url: `/tweets`,
+      data: data})
   }
 };
 

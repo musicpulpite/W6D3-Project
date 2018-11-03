@@ -115,6 +115,14 @@ const APIUtil = {
     url: `/users/search`,
     data: {query: queryVal},
     success: success});
+  },
+
+  createTweet(data) {
+    return $.ajax({
+      method: "POST",
+      dataType: "json",
+      url: `/tweets`,
+      data: data})
   }
 };
 
@@ -133,10 +141,10 @@ module.exports = APIUtil;
 const APIUtil = __webpack_require__(/*! ./api_util.js */ "./frontend/api_util.js")
 
 class FollowToggle {
-  constructor($el){
+  constructor($el, options){
     this.$el = $el;
-    this.userId = $el.data("userid");
-    this.followState = $el.data("followstate");
+    this.userId = $el.data("userid") || options.userId;
+    this.followState = $el.data("followstate") || options.followState;
 
     this.$el.on('click', this.handleClick.bind(this));
 
@@ -183,6 +191,62 @@ module.exports = FollowToggle;
 
 /***/ }),
 
+/***/ "./frontend/tweets_compose.js":
+/*!************************************!*\
+  !*** ./frontend/tweets_compose.js ***!
+  \************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+const APIUtil = __webpack_require__(/*! ./api_util.js */ "./frontend/api_util.js")
+
+class TweetsCompose {
+  constructor($el) {
+    this.$el = $el;
+    this.$submitButton = $el.find(".submit-button");
+    this.$textInput = this.$el.find('textarea[name=tweet\\[content\\]]')
+    this.tweetsFeedId = this.$el.data("tweets-ul");
+    this.charsLeft = 140;
+
+    this.$el.on("submit", this.submit.bind(this));
+    this.$textInput.on("input", this.updateCharsLeft.bind(this));
+  }
+
+  submit() {
+    e.preventDefault();
+
+    const data = this.$el.serializeJSON();
+    this.submitButton.props("disabled", true);
+
+    //do I need to bind handleSuccess to THIS again since its a callback?
+    APIUtil.createTweet(data).then(this.handleSuccess);
+  }
+
+  clearInput() {
+    this.$el.reset();
+  }
+
+  handleSuccess(result) {
+    this.clearInput();
+    this.submitButton.props("disabled", false);
+
+    const tweet = JSON.stringify(result);
+    let $ul = $(this.tweetsFeedId);
+    $ul.append(`<li>${tweet}</li>`)
+    ///////
+  }
+
+  updateCharsLeft() {
+    this.charsLeft -= 1;
+    this.$el.find(".chars-left").text(`${this.charsLeft}`);
+  }
+}
+
+module.exports = TweetsCompose;
+
+
+/***/ }),
+
 /***/ "./frontend/twitter.js":
 /*!*****************************!*\
   !*** ./frontend/twitter.js ***!
@@ -191,7 +255,8 @@ module.exports = FollowToggle;
 /***/ (function(module, exports, __webpack_require__) {
 
 const FollowToggle = __webpack_require__(/*! ./follow_toggle.js */ "./frontend/follow_toggle.js");
-const UsersSearch = __webpack_require__(/*! ./users_search.js */ "./frontend/users_search.js")
+const UsersSearch = __webpack_require__(/*! ./users_search.js */ "./frontend/users_search.js");
+const TweetsCompose = __webpack_require__(/*! ./tweets_compose.js */ "./frontend/tweets_compose.js")
 
 $(() => {
   const $followButtons = $('.follow-toggle');
@@ -199,6 +264,9 @@ $(() => {
 
   const $searchNav = $('.users-search');
   Array.from($searchNav).forEach(nav => new UsersSearch($(nav)));
+
+  const $tweetForm = $('.tweet-compose');
+  new TweetsCompose($tweetForm);
 });
 
 
@@ -212,6 +280,7 @@ $(() => {
 /***/ (function(module, exports, __webpack_require__) {
 
 const APIUtil = __webpack_require__(/*! ./api_util */ "./frontend/api_util.js");
+const FollowToggle = __webpack_require__(/*! ./follow_toggle.js */ "./frontend/follow_toggle.js")
 
 class UsersSearch {
   constructor($el) {
@@ -230,6 +299,14 @@ class UsersSearch {
     this.ul.empty();
     results.forEach((result) => {
       let $li = $(`<li><a href="${result.id}">${result.username}</a></li>`);
+
+      const $followButton = $("<button></button>");
+      new FollowToggle($followButton, {userId: result.id,
+        followState: (result.followed ? "followed" : "unfollowed")
+      });
+
+      $li.append($followButton);
+
       this.ul.append($li);
     });
   }

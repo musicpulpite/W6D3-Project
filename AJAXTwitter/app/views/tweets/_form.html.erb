@@ -1,5 +1,5 @@
 <h2>New Tweet!</h2>
-<form action="/tweets" method="POST">
+<form data-tweets-ul="#feed" class="tweet-compose" action="/tweets" method="POST">
   <input
       type="hidden"
       name="authenticity_token"
@@ -22,5 +22,9 @@
   </label>
   <br>
 
-  <input type="Submit" value="Post Tweet!">
+  <strong class="chars-left">140</strong>
+  <br>
+
+<!-- I added class "submit button" here so I could target it specifically in the JS script -->
+  <input class="submit-button" type="Submit" value="Post Tweet!">
 </form>
